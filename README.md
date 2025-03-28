@@ -6,6 +6,9 @@
  ██║  ██║██║  ██║██║     ██║██████╔╝    ███████║ ╚████╔╝ ╚██████╔╝       
  ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝     ╚═╝╚═════╝     ╚══════╝  ╚═══╝   ╚═════╝
 ```
+
+![build_status](https://github.com/severisuominen/rapid-svo/actions/workflows/cmake-multi-platform.yml/badge.svg)
+
 ## Description 
 
 Single-header fast dynamic sparse voxel octree implementation using integer coordinates and Morton codes. This implementation is the result of prototyping solutions for lightning-fast voxel physics simulations on CPU in chunked procedural game worlds. As a technical challenge, I have been micro-optimizing this to the best of my abilities, but I am confident that further optimizations can be achieved. 
