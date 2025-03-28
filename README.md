@@ -15,6 +15,14 @@ Single-header fast dynamic sparse voxel octree implementation using integer coor
 
 I get considerable faster results by compiling with Clang compared to MSVC, I have not yet determined which optimizations are taking place to account for the difference. Benchmarks seems to be very consistent with both Clang and MSVC.
 
+## Depedencies
+
+| Library  | Description |
+| ------------- | ------------- |
+| [libmorton](https://github.com/Forceflow/libmorton)  | Fast 16/32/64 bit morton codes (LUT) |
+| [glm](https://github.com/g-truc/glm)  | Math types and functions  |
+| [nanobench](https://github.com/martinus/nanobench)  | Benchmarking |
+
 ## Building
 
 CMake can be used to build the project, all depedencies are fetched automatically.
