@@ -1,0 +1,6 @@
+[Bb]uild/
+[Tt]arget/
+.vs/
+.vscode/
+.cache/
+compile_commands.json
