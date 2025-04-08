@@ -13,7 +13,7 @@
 
 static std::string add_thousand_separators(std::string value, char thousandSep = '.')
 {
-    int len = value.length();
+    int len = static_cast<int>(value.length());
     int dlen = 3;
 
     while (len > dlen) {
@@ -57,7 +57,7 @@ static void svo_bench(std::stringstream& strbuf, std::string name, int extent, i
         }
         strbuf << "\n[" << TERMINAL_ANSI_CYAN(name) << "]";
         svo_tree tree{};
-        tree.alloc_bulk(voxels2.data(), voxels2.size());
+        tree.alloc_bulk(voxels2.data(), static_cast<uint32_t>(voxels2.size()));
         strbuf << " \x1B[33m" << (tree.byte_size() / 1000.0) << " KB";
         strbuf << ", max_depth=" << svo_tree::MAX_DEPTH;
         strbuf << "\033[0m" << "\n";
@@ -91,7 +91,7 @@ static void svo_bench(std::stringstream& strbuf, std::string name, int extent, i
         svo_bench.minEpochIterations(max_iters);
         svo_bench.run("svo_alloc(N^3)", [&] {
             svo_tree tree2{};
-            tree2.alloc_bulk(voxels.data(), voxels.size());
+            tree2.alloc_bulk(voxels.data(), static_cast<uint32_t>(voxels.size()));
         });
 
         int found_voxels_count = 0; 
@@ -121,7 +121,7 @@ static void svo_bench(std::stringstream& strbuf, std::string name, int extent, i
         auto r = results[i];
         auto time_per_op_ns = r.median(ankerl::nanobench::Result::Measure::elapsed) * 1e9;
         double op_per_s = 1e9 / time_per_op_ns; 
-        uint32_t voxel_count = op_per_s * count;
+        uint32_t voxel_count = op_per_s * static_cast<double>(count);
         strbuf << std::fixed << add_thousand_separators(std::to_string(voxel_count)) << " voxels/s\t| ";
         strbuf << std::fixed << std::setprecision(2) << time_per_op_ns << " ns/op\t| ";
         strbuf << std::fixed << std::setprecision(2) << (time_per_op_ns/count) << " ns/voxel\t| ";

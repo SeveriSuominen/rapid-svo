@@ -36,6 +36,14 @@
 #include "libmorton/morton3D.h"
 #include "glm/glm.hpp"
 
+#if defined(__clang__) || defined(__GNUC__)
+    #define LOOP_UNROLL _Pragma("unroll")
+#elif defined(_MSC_VER) && !defined(__clang__)
+    #define LOOP_UNROLL __pragma(loop(unroll))
+#else
+    #define LOOP_UNROLL
+#endif
+
 namespace rapid_svo
 {
     /////////////////////////////
@@ -85,19 +93,22 @@ namespace rapid_svo
 
         template<uint8_t beg_val, uint8_t size_val, typename T>
         inline static void bset(T& n_, T value_) 
-        requires (std::is_integral_v<T>) {
-            assert(beg_val+size_val < sizeof(T)*8);
-            const T width_ = size_val;
-            const T cmask_ = ~(((1<<(width_))-1)<<beg_val);
-            const T vmask_ = (value_&((1<<width_)-1))<<beg_val;
-            n_ = (n_&cmask_)|vmask_;
+        requires (std::is_integral_v<T> && std::is_unsigned_v<T>) {
+            constexpr uint8_t total_bits = sizeof(T) * 8;
+            static_assert(beg_val + size_val <= total_bits, "Bit range exceeds type width");
+            constexpr T width_ = (size_val == total_bits) ? T(-1) : ((T(1) << size_val) - 1);
+            const T cmask_ = ~(width_ << beg_val);
+            const T vmask_ = (value_ & width_) << beg_val;
+            n_ = (n_ & cmask_) | vmask_;
         }
 
         template<uint8_t bel_val, uint8_t size_val, typename T>
         inline static void bget(T n_, T& value_) 
-        requires (std::is_integral_v<T>) {
-            assert(bel_val+size_val < sizeof(T)*8);
-            value_ = (n_ >> bel_val) & ((1 << (size_val))-1);
+        requires (std::is_integral_v<T> && std::is_unsigned_v<T>) {
+            constexpr uint8_t total_bits = sizeof(T) * 8;
+            static_assert(bel_val + size_val <= total_bits, "Bit range exceeds type width");
+            constexpr T mask = (size_val == total_bits) ? T(-1) : ((T(1) << size_val) - 1);
+            value_ = (n_ >> bel_val) & mask;
         }
 
         template<typename T>
@@ -282,7 +293,7 @@ namespace rapid_svo
             pack_type val; 
             util::bget<SVO_VFORMAT_VOXEL_IDX>
             (_packed, val);
-            out_ = val;
+            out_ = static_cast<bool>(val);
             return *this;
         }
 
@@ -298,7 +309,7 @@ namespace rapid_svo
             pack_type val; 
             util::bget<SVO_VFORMAT_TYPE_INFO>
             (_packed, val);
-            out_ = val;
+            out_ = static_cast<uint16_t>(val);
             return *this;
         }
 
@@ -350,7 +361,7 @@ namespace rapid_svo
             if(_free.size() > 0) {
                 return _free.front();
             } else {
-                return _blocks.size(); 
+                return static_cast<uint32_t>(_blocks.size()); 
             }
         }
 
@@ -362,7 +373,7 @@ namespace rapid_svo
                 return index;
             } else {
                 _blocks.emplace_back();
-                return _blocks.size()-1; 
+                return static_cast<uint32_t>(_blocks.size())-1; 
             }
         }
 
@@ -472,13 +483,13 @@ namespace rapid_svo
         [[nodiscard]] 
         uint32_t get_node_blocks_count() const
         {
-            return _node_pool._blocks.size() - _node_pool._free.size();
+            return static_cast<uint32_t>(_node_pool._blocks.size() - _node_pool._free.size());
         }
         
         [[nodiscard]] 
         uint32_t get_voxel_blocks_count() const
         {
-            return _voxel_pool._blocks.size() - _voxel_pool._free.size();
+            return static_cast<uint32_t>(_voxel_pool._blocks.size() - _voxel_pool._free.size());
         }
 
         void alloc_bulk(spatial_voxel* voxels, uint32_t count)
@@ -529,11 +540,7 @@ namespace rapid_svo
             // not tested with MSVC, with Clang on windows getting ~2x performance (my PC with 32^3 alloc benchmark, ~1.6m ns -> ~800k ns) 
             // improvement from succesful unrolling for this specific traversing loop, this indicates signifigant overhead is caused by 
             // branching and pipeline stalls
-            #if defined(__clang__) || defined(__GNUC__)
-            #pragma unroll
-            #elif defined(_MSC_VER)
-            #pragma loop(unroll)
-            #endif
+            LOOP_UNROLL
             for(int i = 0; i < MAX_DEPTH-2; ++i)
             {
                 const auto depth_ = i;
@@ -645,11 +652,7 @@ namespace rapid_svo
             // TRAVERSE NODE TREE //
             ////////////////////////
 
-            #if defined(__clang__) || defined(__GNUC__)
-            #pragma unroll
-            #elif defined(_MSC_VER)
-            #pragma loop(unroll)
-            #endif
+            LOOP_UNROLL
             for(int i = 0; i < MAX_DEPTH-1; ++i) 
             {
                 const auto depth_ = i;
@@ -768,12 +771,8 @@ namespace rapid_svo
             ////////////////////////
             // TRAVERSE NODE TREE //
             ////////////////////////
-
-            #if defined(__clang__) || defined(__GNUC__)
-            #pragma unroll
-            #elif defined(_MSC_VER)
-            #pragma loop(unroll)
-            #endif
+            
+            LOOP_UNROLL
             for(int i = 0; i < MAX_DEPTH-1; ++i) 
             {
                 const auto depth_ = i;
